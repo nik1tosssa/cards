@@ -12,11 +12,16 @@ const GameController = {
         UIManager.resetUI();
         GameTimer.reset(UIManager.timerElement);
 
-        // Устанавливаем данные карточек
-        GameState.setCardData(data);
-
-        if (GameState.totalPairs === 0) {
-            UIManager.showLoadingMessage('Нет данных для начала игры. Загрузите файл или используйте стандартный набор.');
+        // Устанавливаем данные карточек только при явной передаче массива.
+        if (data && Array.isArray(data) && data.length > 0) {
+            GameState.setCardData(data);
+        } else if (GameState.currentCardData && GameState.currentCardData.length > 0) {
+            // Если данные уже были загружены ранее - используем их (перезапуск/рестарт).
+            // GameState.currentCardData уже установлены
+            GameState.totalPairs = GameState.currentCardData.length / 2;
+        } else {
+            // Нет данных — требуем загрузить JSON с игрой
+            UIManager.showLoadingMessage('Нет загруженной игры. Пожалуйста, загрузите JSON с карточками через поле "Загрузить свой JSON".', 0);
             UIManager.gridElement.innerHTML = '';
             UIManager.gridElement.style.display = 'none';
             return;
@@ -28,6 +33,29 @@ const GameController = {
         // Обновляем UI
         UIManager.updateScore(0, GameState.totalPairs);
         UIManager.updateErrorCount(0);
+
+        // Устанавливаем подписи колонок на основе типов карточек в наборе данных
+        const col1 = document.getElementById('col-name-1');
+        const col2 = document.getElementById('col-name-2');
+        if (col1 && col2) {
+            // Определяем уникальные типы и назначаем подписи
+            const types = Array.from(new Set(GameState.currentCardData.map(c => c.type)));
+            // Привычные подписи для сетов 'concept' и 'definition'
+            if (types.includes('concept') && types.includes('definition')) {
+                col1.textContent = 'Концепции';
+                col2.textContent = 'Определения';
+            } else if (types.length >= 2) {
+                col1.textContent = types[0];
+                col2.textContent = types[1];
+            } else if (types.length === 1) {
+                // Если только один тип — подпись оставляем на первой колонке, вторая пустая
+                col1.textContent = types[0];
+                col2.textContent = '';
+            } else {
+                col1.textContent = '';
+                col2.textContent = '';
+            }
+        }
 
         // Рендерим карточки
         CardManager.renderCards(UIManager.gridElement, GameState.currentCardData, GameState.totalPairs);
@@ -53,8 +81,7 @@ const GameController = {
         fileInputElement.addEventListener('change', (e) => FileLoader.handleFileLoad(e));
         restartButtonModal.addEventListener('click', () => this.startGame());
 
-        // Первый запуск игры
-        this.startGame();
+        // Не запускаем игру автоматически — ожидаем загрузки JSON с конкретной игрой.
     },
 };
 

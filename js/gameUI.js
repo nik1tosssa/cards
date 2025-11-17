@@ -61,6 +61,11 @@ const UIManager = {
         this.maxErrorsElement.textContent = GameState.MAX_ERRORS;
         this.statusMessageModal.classList.add('hidden');
         this.loadingMessageElement.style.display = 'none';
+        // Очищаем подписи колонок, они будут установлены после загрузки JSON
+        const col1 = document.getElementById('col-name-1');
+        const col2 = document.getElementById('col-name-2');
+        if (col1) col1.textContent = '';
+        if (col2) col2.textContent = '';
     },
 
     /**

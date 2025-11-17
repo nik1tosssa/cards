@@ -52,8 +52,14 @@ const GameState = {
      * Устанавливает данные карточек
      */
     setCardData(data) {
-        this.currentCardData = data || this.DEFAULT_CARD_DATA;
-        this.totalPairs = this.currentCardData.length / 2;
+        // Устанавливаем только если передан валидный массив, иначе очищаем данные.
+        if (Array.isArray(data) && data.length > 0) {
+            this.currentCardData = data;
+            this.totalPairs = this.currentCardData.length / 2;
+        } else {
+            this.currentCardData = [];
+            this.totalPairs = 0;
+        }
     },
 
     /**
