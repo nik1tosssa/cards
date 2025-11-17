@@ -125,22 +125,11 @@ const FortuneWheelGame = {
     /**
      * Загружает и валидирует данные игры
      */
-    loadGameData(data) {
-        console.log('FortuneWheelGame: Загрузка данных', data);
-
-        // Проверяем структуру данных
-        if (!Array.isArray(data)) {
-            console.error('FortuneWheelGame: Данные должны быть массивом слов');
-            alert('Ошибка: JSON должен содержать массив слов/фраз');
-            return;
-        }
-
-        // Валидируем и нормализуем каждый элемент. Поддерживаем:
-        // - строку (importance по умолчанию = 1)
-        // - объект { text: string, importance: number }
-        const normalized = [];
-        for (let i = 0; i < data.length; i++) {
-            const item = data[i];
+    // Преобразует входной JSON- массив в нормализованный массив {text, importance}
+    normalizeInput(data) {
+        if (!Array.isArray(data)) return [];
+        const out = [];
+        for (let item of data) {
             let text = '';
             let importance = 1;
             if (typeof item === 'string') {
@@ -150,43 +139,29 @@ const FortuneWheelGame = {
                 if (typeof item.importance === 'number' && isFinite(item.importance) && item.importance > 0) {
                     importance = item.importance;
                 } else if (typeof item.weight === 'number' && isFinite(item.weight) && item.weight > 0) {
-                    // поддержка alternate поля weight
                     importance = item.weight;
                 }
             }
-            if (text && text.length > 0) {
-                normalized.push({ text, importance });
-            }
+            if (text) out.push({ text, importance });
         }
+        return out;
+    },
 
-    if (normalized.length === 0) {
-            console.error('FortuneWheelGame: Нет валидных слов в JSON');
+    loadGameData(data) {
+        const normalized = this.normalizeInput(data);
+        if (normalized.length === 0) {
             alert('Ошибка: JSON не содержит валидных слов/фраз');
             return;
         }
-
-    console.log(`FortuneWheelGame: Загружено ${normalized.length} слов из ${data.length}`);
-
-        // Сохраняем данные
-    // Сохраняем нормализованные элементы как массив объектов {text, importance}
-    this.gameData = normalized;
+        // Сохраняем и инициализируем
+        this.gameData = normalized;
         this.selectedIndex = -1;
-
-        // Показываем контейнер с игровым UI
         const gameUI = document.getElementById('game-ui');
-        if (gameUI) {
-            gameUI.style.display = '';
-        }
-
-        // Инициализируем колесо
-    this.initializeWheel();
-
-        // Активируем кнопку вращения
+        if (gameUI) gameUI.style.display = '';
+        this.initializeWheel();
         this.spinButton.disabled = false;
         this.spinButton.textContent = '🎲 Вращать колесо';
-        
-        // Очищаем результат
-    this.resultDisplay.textContent = `Загружено ${normalized.length} слов. Нажми "Вращать колесо"!`;
+        this.resultDisplay.textContent = `Загружено ${normalized.length} слов. Нажми "Вращать колесо"!`;
     },
 
     /**
@@ -196,86 +171,33 @@ const FortuneWheelGame = {
         console.log('FortuneWheelGame: Инициализация колеса');
 
         if (!this.wheelCanvas) return;
-        
-        const ctx = this.wheelCanvas.getContext('2d');
-        if (!ctx) return;
 
-        const centerX = this.wheelCanvas.width / 2;
-        const centerY = this.wheelCanvas.height / 2;
-        const radius = Math.min(centerX, centerY) - 10;
+        // Перестроим сегменты (логика вынесена в buildSegments)
+        this.buildSegments();
 
-    // Создаём сегменты колеса с учётом importance (веса)
-    this.wheelSegments = [];
-    const totalWeight = this.gameData.reduce((s, it) => s + (it.importance || 1), 0);
-    const fullCircle = Math.PI * 2;
-    let angleCursor = -Math.PI / 2; // стартуем сверху
+        // А затем отрисуем колесо на canvas через drawWheelRotated(0)
+        this.drawWheelRotated(0);
+    },
 
-        // Очищаем canvas
-        ctx.fillStyle = '#f3f4f6';
-        ctx.fillRect(0, 0, this.wheelCanvas.width, this.wheelCanvas.height);
-
-        // Рисуем сегменты колеса
+    /**
+     * Построение массива wheelSegments на основе this.gameData (учитывает importance)
+     */
+    buildSegments() {
+        this.wheelSegments = [];
+        if (!this.gameData || this.gameData.length === 0) return;
+        const totalWeight = this.gameData.reduce((s, it) => s + (it.importance || 1), 0);
+        const fullCircle = Math.PI * 2;
+        let angleCursor = -Math.PI / 2; // стартуем сверху
         const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#f97316', '#ef4444', '#14b8a6'];
-
         for (let i = 0; i < this.gameData.length; i++) {
             const item = this.gameData[i];
             const weight = item.importance || 1;
             const segAngle = (weight / totalWeight) * fullCircle;
             const startAngle = angleCursor;
             const endAngle = startAngle + segAngle;
-
-            // Сохраняем данные сегмента
-            this.wheelSegments.push({
-                startAngle: startAngle,
-                endAngle: endAngle,
-                itemIndex: i,
-                color: colors[i % colors.length]
-            });
-
-            // Рисуем сегмент
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.lineTo(centerX, centerY);
-            ctx.fillStyle = this.wheelSegments[i].color;
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Рисуем текст слова на сегменте
-            const textAngle = (startAngle + endAngle) / 2;
-            const textX = centerX + Math.cos(textAngle) * (radius * 0.65);
-            const textY = centerY + Math.sin(textAngle) * (radius * 0.65);
-
-            ctx.save();
-            ctx.translate(textX, textY);
-            ctx.rotate(textAngle + Math.PI / 2);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Обрезаем длинный текст
-            const word = item.text;
-            const displayText = word.length > 12 ? word.substring(0, 10) + '...' : word;
-            ctx.fillText(displayText, 0, 0);
-            ctx.restore();
-
+            this.wheelSegments.push({ startAngle, endAngle, itemIndex: i, color: colors[i % colors.length] });
             angleCursor = endAngle;
         }
-
-        // Рисуем центральный круг
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Рисуем стрелку-указатель (вверху)
-        this.drawPointer(ctx, centerX, centerY - radius - 5);
     },
 
     /**
@@ -352,7 +274,6 @@ const FortuneWheelGame = {
                     // Вращение завершено — вычислим, какой сегмент реально оказался под указателем
                     const finalRotation = totalRotation; // итоговая абсолютная ротация, которая была отрисована
                     const resolvedIndex = this.getIndexForRotation(finalRotation);
-                    console.debug(`FortuneWheelGame: randomIndex=${randomSegmentIndex}, resolvedIndex=${resolvedIndex}`);
                     // Сохраняем и показываем результат по вычисленному индексу
                     this.selectedIndex = resolvedIndex;
                     this.showResult(resolvedIndex);
@@ -461,8 +382,7 @@ const FortuneWheelGame = {
     showResult(index) {
         // Если передан индекс, используем его; иначе используем сохранённый selectedIndex
         const idx = (typeof index === 'number') ? index : this.selectedIndex;
-    // Debug log to help trace potential off-by-one / stale state issues
-    console.debug(`FortuneWheelGame.showResult called with index=${index}, resolved idx=${idx}, this.selectedIndex=${this.selectedIndex}`);
+    // (debug logs removed)
         if (idx < 0 || idx >= this.gameData.length) return;
 
     const selectedWord = this.gameData[idx].text;
