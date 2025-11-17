@@ -19,13 +19,35 @@ body {
     box-shadow: 0 6px 10px -2px rgba(0, 0, 0, 0.15);
 }
 
+/* Выбранная кликом карточка слева: немного больше и темнее */
+.card.concept.selected {
+    background-color: #bae6fd; /* чуть темнее sky-200 */
+    border-color: #0ea5e9; /* более насыщённая граница sky-500 */
+    transform: scale(1.03); /* немного больше */
+    z-index: 1; /* поверх соседних при масштабировании */
+    position: relative;
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 8px 16px -6px rgba(2, 132, 199, 0.25);
+}
+
 /* Стиль для целевой карточки (Определение) */
 .card.definition {
     background-color: #fff;
     border-style: dashed;
     border-color: #9ca3af; /* border-gray-400 */
     color: #4b5563;
-    cursor: default;
+    cursor: pointer; /* кликабельная область */
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Лёгкое увеличение и затемнение области дропа при наведении (клики вместо dnd) */
+.card.definition:not(.matched):not(.drag-error):not(.drag-over):hover {
+    transform: scale(1.02);
+    background-color: #f3f4f6; /* чуть темнее, чем белый */
+    border-color: #6b7280; /* border-gray-600 немного темнее */
+    box-shadow: 0 8px 16px -6px rgba(0,0,0,0.12);
+    position: relative;
+    z-index: 1;
 }
 
 /* Стиль для сопоставленной карточки */
@@ -49,12 +71,30 @@ body {
 /* Стиль при ошибке сброса */
 .card.definition.drag-error {
     background-color: #fee2e2; /* bg-red-100 */
-    border-color: #f87171; /* border-red-400 */
+    border-color: #ef4444; /* border-red-500 */
+    border-style: solid; /* делаем обводку сплошной на время ошибки */
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35), 0 6px 12px rgba(0,0,0,0.08); /* красное кольцо вокруг карточки */
+    animation: shake 0.6s ease; /* дрожание при неверном ответе */
 }
 
 @keyframes match-fade {
     0% { transform: scale(1.05); }
     100% { transform: scale(1.0); }
+}
+
+/* Анимация дрожания для неверных ответов */
+@keyframes shake {
+    0% { transform: translateX(0); }
+    10% { transform: translateX(-6px); }
+    20% { transform: translateX(6px); }
+    30% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    50% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    70% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+    90% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
 }
 
 /* Стили для игрового поля: Единая сетка с 2 колонками */

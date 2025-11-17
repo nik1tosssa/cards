@@ -3,25 +3,67 @@
  */
 
 const DragDropHandler = {
+    // Режим кликов: внутреннее состояние выбранной карточки слева
+    selectedConceptId: null,
+    selectedConceptEl: null,
+    clicksDisabled: false,
     /**
      * Обработчик начала перетаскивания
      */
-    handleDragStart(e) {
-        if (GameState.isMaxErrorsReached()) return;
+    // КЛИК ПО КОНЦЕПТУ (левая колонка)
+    handleConceptClick(e) {
+        if (GameState.isMaxErrorsReached() || DragDropHandler.clicksDisabled) return;
+        const el = e.currentTarget;
+        if (!el || el.style.visibility === 'hidden' || el.classList.contains('matched')) return;
 
-        GameState.draggedCardId = parseInt(e.target.dataset.id);
-        e.dataTransfer.setData('text/plain', GameState.draggedCardId);
-        e.target.classList.add('opacity-50');
+        const id = parseInt(el.dataset.id);
+
+        // Повторный клик по выбранному — сбрасываем выбор
+        if (DragDropHandler.selectedConceptId === id) {
+            DragDropHandler.clearSelection();
+            return;
+        }
+
+        // Переключаем выбор на новую карточку
+        DragDropHandler.clearSelection();
+        DragDropHandler.selectedConceptId = id;
+        DragDropHandler.selectedConceptEl = el;
+
+        // Визуально обозначаем выбор
+        el.classList.add('ring-2', 'ring-indigo-400', 'ring-offset-2', 'selected');
     },
 
     /**
      * Обработчик dragover события
      */
-    handleDragOver(e) {
-        e.preventDefault();
-        if (!e.currentTarget.classList.contains('matched') && !GameState.isMaxErrorsReached()) {
-            e.currentTarget.classList.add('drag-over');
+    // КЛИК ПО ОПРЕДЕЛЕНИЮ (правая колонка)
+    handleDefinitionClick(e) {
+        if (DragDropHandler.clicksDisabled) return;
+        const dropTarget = e.currentTarget;
+        if (dropTarget.classList.contains('matched') || GameState.isMaxErrorsReached()) return;
+
+        const conceptId = DragDropHandler.selectedConceptId;
+        const draggedElement = DragDropHandler.selectedConceptEl;
+
+        if (conceptId === null || !draggedElement) {
+            // Ничего не выбрано — краткий намёк (подсветим карточку)
+            dropTarget.classList.add('drag-over');
+            setTimeout(() => dropTarget.classList.remove('drag-over'), 200);
+            return;
         }
+
+        const definitionMatchId = parseInt(dropTarget.dataset.matchId);
+
+        if (conceptId === definitionMatchId) {
+            // УСПЕШНОЕ СОВПАДЕНИЕ
+            DragDropHandler.handleSuccessfulMatch(draggedElement, dropTarget, conceptId);
+        } else {
+            // ОШИБКА
+            DragDropHandler.handleMismatch(draggedElement, dropTarget);
+        }
+
+        // Сбрасываем выбор после попытки
+        DragDropHandler.clearSelection();
     },
 
     /**
@@ -82,6 +124,7 @@ const DragDropHandler = {
 
         if (GameState.isAllMatched()) {
             GameTimer.stop();
+            DragDropHandler.disableClicks();
             setTimeout(() => UIManager.showGameStatusModal('win'), 500);
         }
     },
@@ -93,7 +136,8 @@ const DragDropHandler = {
         // Если нет штрафов за ошибки (maxErrors = Infinity), только показываем ошибку
         if (GameState.MAX_ERRORS === Infinity) {
             CardManager.showError(dropTarget);
-            CardManager.resetConceptVisuals(draggedElement);
+            // Визуально сбросим выделение у выбранного концепта, если было
+            DragDropHandler.clearSelection();
             return;
         }
 
@@ -102,11 +146,11 @@ const DragDropHandler = {
         UIManager.updateErrorCount(GameState.errorCount);
 
         CardManager.showError(dropTarget);
-        CardManager.resetConceptVisuals(draggedElement);
+        DragDropHandler.clearSelection();
 
         if (GameState.isMaxErrorsReached()) {
             GameTimer.stop();
-            document.querySelectorAll('.card.concept').forEach(card => card.setAttribute('draggable', 'false'));
+            DragDropHandler.disableClicks();
             setTimeout(() => UIManager.showGameStatusModal('game-over'), 700);
         }
     },
@@ -115,8 +159,24 @@ const DragDropHandler = {
      * Обработка истечения времени
      */
     handleTimeExpired() {
-        // Блокируем перетаскивание
-        document.querySelectorAll('.card.concept').forEach(card => card.setAttribute('draggable', 'false'));
+        // Блокируем клики
+        DragDropHandler.disableClicks();
         setTimeout(() => UIManager.showGameStatusModal('game-over'), 700);
+    },
+
+    // Сбрасывает текущий выбор концепта
+    clearSelection() {
+        if (DragDropHandler.selectedConceptEl) {
+            DragDropHandler.selectedConceptEl.classList.remove('ring-2', 'ring-indigo-400', 'ring-offset-2', 'selected');
+        }
+        DragDropHandler.selectedConceptId = null;
+        DragDropHandler.selectedConceptEl = null;
+    },
+
+    // Полностью отключает клики по всем карточкам (для конца игры/таймера)
+    disableClicks() {
+        DragDropHandler.clicksDisabled = true;
+        const grid = document.getElementById('game-grid');
+        if (grid) grid.classList.add('pointer-events-none');
     }
 };

@@ -20,23 +20,23 @@ const CardManager = {
     createCardElement(card, isDraggable) {
         const cardElement = document.createElement('div');
 
-        cardElement.className = 'card p-4 md:p-6 rounded-xl border-2 transition duration-300 ease-in-out shadow-md text-center flex items-center justify-center';
+        // Автовысота без скролла: карточка занимает столько места, сколько нужно
+        // Добавляем перенос длинных слов и сохранение переводов строк
+        cardElement.className = 'card p-4 md:p-6 rounded-xl border-2 transition duration-300 ease-in-out shadow-md text-center flex items-center justify-center break-words whitespace-pre-wrap';
 
         cardElement.dataset.id = card.id;
         cardElement.dataset.matchId = card.matchId;
         cardElement.dataset.content = card.content;
 
         if (isDraggable) {
-            cardElement.classList.add('concept', 'cursor-grab', 'hover:shadow-lg');
-            cardElement.setAttribute('draggable', 'true');
-            cardElement.addEventListener('dragstart', DragDropHandler.handleDragStart);
+            // Режим кликов: выбираем концепт кликом
+            cardElement.classList.add('concept', 'cursor-pointer', 'hover:shadow-lg');
+            cardElement.addEventListener('click', DragDropHandler.handleConceptClick);
             cardElement.innerHTML = `<p class="font-semibold text-lg md:text-xl">${card.content}</p>`;
         } else {
-            cardElement.classList.add('definition', 'hover:shadow');
-            cardElement.addEventListener('dragover', DragDropHandler.handleDragOver);
-            cardElement.addEventListener('dragenter', DragDropHandler.handleDragEnter);
-            cardElement.addEventListener('dragleave', DragDropHandler.handleDragLeave);
-            cardElement.addEventListener('drop', DragDropHandler.handleDrop);
+            // Режим кликов: кликаем по определению для проверки совпадения с выбранным концептом
+            cardElement.classList.add('definition', 'hover:shadow', 'cursor-pointer');
+            cardElement.addEventListener('click', DragDropHandler.handleDefinitionClick);
 
             cardElement.innerHTML = `<p class="font-medium text-base md:text-lg text-gray-700">${card.content}</p>`;
         }
@@ -87,16 +87,40 @@ const CardManager = {
     renderCards(gridElement, cardData, totalPairs) {
         const { leftCards, rightCards } = this.separateCards(cardData);
 
+        // Подготовка контейнера: две колонки
         gridElement.innerHTML = '';
-        gridElement.style.display = 'grid';
+        gridElement.className = '';
+        gridElement.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-4');
 
-        for (let i = 0; i < totalPairs; i++) {
+        // Создаём левый и правый столбцы
+        const leftColumn = document.createElement('div');
+        leftColumn.id = 'left-column';
+        leftColumn.className = 'flex flex-col gap-4';
+
+        const rightColumn = document.createElement('div');
+        rightColumn.id = 'right-column';
+        rightColumn.className = 'flex flex-col gap-4';
+
+        // Количество пар не должно превышать доступные карты в каждой колонке
+        const pairs = Math.min(
+            totalPairs,
+            leftCards.length,
+            rightCards.length
+        );
+
+        for (let i = 0; i < pairs; i++) {
             const leftCard = leftCards[i];
             const rightCard = rightCards[i];
 
-            gridElement.appendChild(this.createCardElement(leftCard, true));
-            gridElement.appendChild(this.createCardElement(rightCard, false));
+            if (leftCard) leftColumn.appendChild(this.createCardElement(leftCard, true));
+            if (rightCard) rightColumn.appendChild(this.createCardElement(rightCard, false));
         }
+
+        gridElement.appendChild(leftColumn);
+        gridElement.appendChild(rightColumn);
+
+        // После отрисовки выравниваем высоту всех карточек по самой высокой
+        this.equalizeCardHeights(gridElement);
     },
 
     /**
@@ -115,8 +139,27 @@ const CardManager = {
             <div class="text-gray-700 text-base px-2">${definitionContent}</div>
         `;
 
-        definitionElement.classList.remove('definition', 'hover:shadow', 'items-center', 'justify-center');
-        definitionElement.classList.add('matched', 'flex-col', 'justify-start', 'pt-6', 'pb-6');
+        // Снимаем временные/интерактивные стили
+        definitionElement.classList.remove('definition', 'hover:shadow', 'items-center', 'justify-center', 'drag-over', 'drag-error');
+
+        // Добавляем оформление успешного совпадения (зелёная подсветка)
+        definitionElement.classList.add(
+            'matched',
+            'flex-col',
+            'justify-start',
+            'pt-6',
+            'pb-6',
+            'bg-green-50',
+            'border-green-400',
+            'shadow-md'
+        );
+
+        // Контент правой карточки стал больше — переравняем высоты всех карточек
+        // Делаем после перерисовки, чтобы измерения были корректны
+        requestAnimationFrame(() => {
+            const grid = document.getElementById('game-grid');
+            if (grid) this.equalizeCardHeights(grid);
+        });
     },
 
     /**
@@ -136,5 +179,32 @@ const CardManager = {
         if (conceptElement) {
             conceptElement.classList.remove('opacity-50');
         }
+    },
+
+    /**
+     * Выравнивает высоту всех карточек внутри грида по высоте самой высокой
+     */
+    equalizeCardHeights(gridElement) {
+        if (!gridElement) return;
+
+        const cards = gridElement.querySelectorAll('.card');
+        if (!cards.length) return;
+
+        // Сбрасываем высоту, чтобы корректно измерить естественную
+        cards.forEach(card => {
+            card.style.height = 'auto';
+        });
+
+        // Находим максимальную высоту
+        let maxHeight = 0;
+        cards.forEach(card => {
+            const h = card.offsetHeight;
+            if (h > maxHeight) maxHeight = h;
+        });
+
+        // Применяем одинаковую высоту ко всем карточкам
+        cards.forEach(card => {
+            card.style.height = `${maxHeight}px`;
+        });
     },
 };

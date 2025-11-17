@@ -56,7 +56,7 @@ const GameController = {
             if (GameState.gameMeta.description) {
                 description.textContent = GameState.gameMeta.description;
             } else {
-                description.textContent = 'Перетащите карточки слева на карточки справа для сопоставления.';
+                description.textContent = 'Выберите карточку слева, затем кликните по соответствующей карточке справа.';
             }
         }
 
@@ -89,6 +89,14 @@ const GameController = {
 
         // Рендерим карточки
         CardManager.renderCards(UIManager.gridElement, GameState.currentCardData, GameState.totalPairs);
+
+        // Сбрасываем состояние обработчика кликов (на случай рестарта)
+        if (typeof DragDropHandler !== 'undefined') {
+            if (DragDropHandler.clearSelection) DragDropHandler.clearSelection();
+            DragDropHandler.clicksDisabled = false;
+            const grid = document.getElementById('game-grid');
+            if (grid) grid.classList.remove('pointer-events-none');
+        }
 
         // Устанавливаем лимит времени, если указан в метаданных
         if (GameState.gameMeta.timeLimit) {
