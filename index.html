@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Соотнеси карточки</title>
+    <!-- Загрузка Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Загрузка стилей -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="p-4 md:p-8 flex items-start justify-center">
+
+    <div id="app" class="w-full max-w-4xl bg-white rounded-xl shadow-2xl p-6 md:p-10 transition-all duration-300">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Соотнеси карточки: Концепции 🧠</h1>
+        <p class="text-gray-500 text-center mb-6">Перетащите концепцию (слева) на ее определение (справа).</p>
+
+        <!-- Статус, Таймер, Ошибки и Счет -->
+        <div class="grid grid-cols-4 gap-2 items-center mb-6 p-3 bg-indigo-50 rounded-lg shadow-inner text-center">
+            <div class="text-lg font-semibold text-indigo-700 text-left">
+                Сопост.: <span id="score">0</span> / <span id="total-pairs"></span>
+            </div>
+            <!-- Элемент Таймера -->
+            <div class="text-lg font-semibold text-indigo-700">
+                Время: <span id="timer">00:00</span>
+            </div>
+            <!-- Элемент Ошибок -->
+            <div class="text-lg font-semibold text-red-600">
+                Ошибки: <span id="error-count">0</span>/<span id="max-errors">5</span>
+            </div>
+            <button id="restart-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105 justify-self-end">
+                Начать заново
+            </button>
+        </div>
+
+        <!-- JSON File Load Input -->
+        <div class="mb-6">
+            <label for="json-file" class="block text-sm font-medium text-gray-700 mb-2">
+                ИЛИ Загрузить свой JSON-файл с карточками (формат: `id`, `type`, `content`, `matchId`):
+            </label>
+            <input type="file" id="json-file" accept=".json" class="w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-indigo-50 file:text-indigo-700
+                hover:file:bg-indigo-100 cursor-pointer
+            "/>
+        </div>
+
+        <!-- Заголовки колонок -->
+        <div class="grid grid-cols-2 gap-4 text-xl font-bold text-gray-700 mb-4 text-center">
+            <div>Концепции</div>
+            <div>Определения</div>
+        </div>
+
+        <!-- Индикатор загрузки -->
+        <div id="loading-message">Загрузка данных...</div>
+
+        <!-- Игровое поле -->
+        <div id="game-grid" class="mb-8">
+            <!-- Карточки будут добавлены сюда парами -->
+        </div>
+
+        <!-- Модальное окно со статусом игры -->
+        <div id="status-message-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <div class="bg-white p-8 md:p-10 rounded-xl shadow-2xl text-center max-w-md transform transition-all duration-500 scale-100">
+                <svg id="status-icon" xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path id="icon-path" fill-rule="evenodd" d="" clip-rule="evenodd" />
+                </svg>
+                <h2 id="status-title" class="text-3xl font-bold text-gray-800 mb-4"></h2>
+                <p id="status-text" class="text-gray-600 mb-6 text-lg"></p>
+                <button id="restart-button-modal" class="font-medium py-3 px-6 rounded-lg shadow-lg transition duration-150 ease-in-out transform hover:scale-105">
+                    Играть еще раз
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Загрузка JavaScript модулей -->
+    <script src="js/gameState.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/cardManager.js"></script>
+    <script src="js/dragDropHandler.js"></script>
+    <script src="js/gameUI.js"></script>
+    <script src="js/fileLoader.js"></script>
+    <script src="js/game.js"></script>
+
+</body>
+</html>
