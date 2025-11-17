@@ -45,14 +45,39 @@ const CardManager = {
     },
 
     /**
-     * Разделяет карточки на концепции и определения
+     * Разделяет карточки на две группы по типам
+     * Использует первый и второй уникальные типы из данных
      */
     separateCards(cardData) {
-        const concepts = cardData.filter(c => c.type === 'concept');
-        const definitions = cardData.filter(c => c.type === 'definition');
+        // Получаем уникальные типы
+        const types = Array.from(new Set(cardData.map(c => c.type)));
+        
+        // Если есть оба типа (старая модель с concept/definition)
+        if (types.includes('concept') && types.includes('definition')) {
+            const concepts = cardData.filter(c => c.type === 'concept');
+            const definitions = cardData.filter(c => c.type === 'definition');
+            return {
+                leftCards: this.shuffleArray(concepts),
+                rightCards: this.shuffleArray(definitions),
+            };
+        }
+        
+        // Новая модель или пользовательские типы - разделяем по первым двум типам
+        if (types.length >= 2) {
+            const leftCards = cardData.filter(c => c.type === types[0]);
+            const rightCards = cardData.filter(c => c.type === types[1]);
+            return {
+                leftCards: this.shuffleArray(leftCards),
+                rightCards: this.shuffleArray(rightCards),
+            };
+        }
+
+        // Fallback: если только один тип, разделяем пополам
+        const shuffled = this.shuffleArray([...cardData]);
+        const half = Math.floor(shuffled.length / 2);
         return {
-            concepts: this.shuffleArray(concepts),
-            definitions: this.shuffleArray(definitions),
+            leftCards: shuffled.slice(0, half),
+            rightCards: shuffled.slice(half),
         };
     },
 
@@ -60,17 +85,17 @@ const CardManager = {
      * Рендерит карточки в игровое поле
      */
     renderCards(gridElement, cardData, totalPairs) {
-        const { concepts, definitions } = this.separateCards(cardData);
+        const { leftCards, rightCards } = this.separateCards(cardData);
 
         gridElement.innerHTML = '';
         gridElement.style.display = 'grid';
 
         for (let i = 0; i < totalPairs; i++) {
-            const conceptCard = concepts[i];
-            const definitionCard = definitions[i];
+            const leftCard = leftCards[i];
+            const rightCard = rightCards[i];
 
-            gridElement.appendChild(this.createCardElement(conceptCard, true));
-            gridElement.appendChild(this.createCardElement(definitionCard, false));
+            gridElement.appendChild(this.createCardElement(leftCard, true));
+            gridElement.appendChild(this.createCardElement(rightCard, false));
         }
     },
 

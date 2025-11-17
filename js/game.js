@@ -12,20 +12,29 @@ const GameController = {
         UIManager.resetUI();
         GameTimer.reset(UIManager.timerElement);
 
-        // Устанавливаем данные карточек только при явной передаче массива.
-        if (data && Array.isArray(data) && data.length > 0) {
+        // Если данные не переданы, но есть сохраненные исходные данные - используем их (рестарт)
+        if (!data && GameState.originalGameData) {
+            data = GameState.originalGameData;
+        }
+
+        // Проверяем формат данных: новая модель (с meta) или старая (массив карточек)
+        let isNewFormat = data && typeof data === 'object' && !Array.isArray(data) && data.meta && data.cards;
+
+        if (isNewFormat) {
+            // Новая модель с метаданными
+            GameState.setGameData(data);
+        } else if (data && Array.isArray(data) && data.length > 0) {
+            // Старая модель - просто массив карточек
             GameState.setCardData(data);
-        } else if (GameState.currentCardData && GameState.currentCardData.length > 0) {
-            // Если данные уже были загружены ранее - используем их (перезапуск/рестарт).
-            // GameState.currentCardData уже установлены
-            GameState.totalPairs = GameState.currentCardData.length / 2;
         } else {
             // Нет данных — требуем загрузить JSON с игрой
+            UIManager.hideGameUI();
             UIManager.showLoadingMessage('Нет загруженной игры. Пожалуйста, загрузите JSON с карточками через поле "Загрузить свой JSON".', 0);
-            UIManager.gridElement.innerHTML = '';
-            UIManager.gridElement.style.display = 'none';
             return;
         }
+
+        // Показываем игровой UI после успешной загрузки данных
+        UIManager.showGameUI();
 
         // Инициализируем состояние
         GameState.init();
@@ -33,32 +42,58 @@ const GameController = {
         // Обновляем UI
         UIManager.updateScore(0, GameState.totalPairs);
         UIManager.updateErrorCount(0);
+        UIManager.updateMaxErrors(GameState.MAX_ERRORS);
 
-        // Устанавливаем подписи колонок на основе типов карточек в наборе данных
+        // Обновляем заголовок и описание страницы, если указаны в метаданных
+        const h1 = document.querySelector('h1');
+        const description = document.getElementById('game-description');
+        
+        if (h1 && GameState.gameMeta.title) {
+            h1.textContent = GameState.gameMeta.title;
+        }
+        
+        if (description) {
+            if (GameState.gameMeta.description) {
+                description.textContent = GameState.gameMeta.description;
+            } else {
+                description.textContent = 'Перетащите карточки слева на карточки справа для сопоставления.';
+            }
+        }
+
+        // Устанавливаем подписи колонок
         const col1 = document.getElementById('col-name-1');
         const col2 = document.getElementById('col-name-2');
         if (col1 && col2) {
-            // Определяем уникальные типы и назначаем подписи
-            const types = Array.from(new Set(GameState.currentCardData.map(c => c.type)));
-            // Привычные подписи для сетов 'concept' и 'definition'
-            if (types.includes('concept') && types.includes('definition')) {
-                col1.textContent = 'Концепции';
-                col2.textContent = 'Определения';
-            } else if (types.length >= 2) {
-                col1.textContent = types[0];
-                col2.textContent = types[1];
-            } else if (types.length === 1) {
-                // Если только один тип — подпись оставляем на первой колонке, вторая пустая
-                col1.textContent = types[0];
-                col2.textContent = '';
+            // Если метаданные содержат названия колонок, используем их
+            if (GameState.gameMeta.columnNames && GameState.gameMeta.columnNames.length >= 2) {
+                col1.textContent = GameState.gameMeta.columnNames[0];
+                col2.textContent = GameState.gameMeta.columnNames[1];
             } else {
-                col1.textContent = '';
-                col2.textContent = '';
+                // Иначе определяем по типам карточек
+                const types = Array.from(new Set(GameState.currentCardData.map(c => c.type)));
+                if (types.includes('concept') && types.includes('definition')) {
+                    col1.textContent = 'Концепции';
+                    col2.textContent = 'Определения';
+                } else if (types.length >= 2) {
+                    col1.textContent = types[0];
+                    col2.textContent = types[1];
+                } else if (types.length === 1) {
+                    col1.textContent = types[0];
+                    col2.textContent = '';
+                } else {
+                    col1.textContent = '';
+                    col2.textContent = '';
+                }
             }
         }
 
         // Рендерим карточки
         CardManager.renderCards(UIManager.gridElement, GameState.currentCardData, GameState.totalPairs);
+
+        // Устанавливаем лимит времени, если указан в метаданных
+        if (GameState.gameMeta.timeLimit) {
+            GameTimer.setTimeLimit(GameState.gameMeta.timeLimit);
+        }
 
         // Запускаем таймер
         GameTimer.start(UIManager.timerElement);

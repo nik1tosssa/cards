@@ -53,6 +53,50 @@ const UIManager = {
     },
 
     /**
+     * Обновляет максимальное количество ошибок и показывает/скрывает счётчик
+     */
+    updateMaxErrors(maxErrors) {
+        const errorCountContainer = document.querySelector('.text-red-600');
+        if (maxErrors === Infinity) {
+            // Нет штрафов - скрываем счётчик ошибок
+            if (errorCountContainer) {
+                errorCountContainer.style.display = 'none';
+            }
+        } else {
+            // Есть штрафы - показываем счётчик
+            if (errorCountContainer) {
+                errorCountContainer.style.display = 'block';
+            }
+            this.maxErrorsElement.textContent = maxErrors;
+        }
+    },
+
+    /**
+     * Показывает весь игровой UI после загрузки JSON и регистрирует обработчик времени
+     */
+    showGameUI() {
+        const gameUI = document.getElementById('game-ui');
+        if (gameUI) {
+            gameUI.style.display = 'block';
+        }
+
+        // Регистрируем обработчик события истечения времени
+        document.addEventListener('timeExpired', () => {
+            DragDropHandler.handleTimeExpired();
+        });
+    },
+
+    /**
+     * Скрывает весь игровой UI
+     */
+    hideGameUI() {
+        const gameUI = document.getElementById('game-ui');
+        if (gameUI) {
+            gameUI.style.display = 'none';
+        }
+    },
+
+    /**
      * Сбрасывает UI к начальному состоянию
      */
     resetUI() {
@@ -114,11 +158,12 @@ const UIManager = {
 
             this.statusText.innerHTML = `
                 Вы достигли лимита ошибок (<strong>${GameState.MAX_ERRORS}</strong>).
-                <br>
-                Попробуйте еще раз!
                 <br><br>
                 Время игры: <strong>${finalTime}</strong>
+                <br><br>
+                Нажмите кнопку ниже, чтобы начать заново.
             `;
+            this.restartButtonModal.textContent = 'Начать заново';
         }
 
         this.statusMessageModal.classList.remove('hidden');

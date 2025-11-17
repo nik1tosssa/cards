@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "title": "Веб-технологии",
+    "description": "Сопоставьте технологии с их описаниями. У вас есть 5 минут и 3 ошибки.",
+    "columnNames": ["Технология", "Описание"],
+    "timeLimit": 300,
+    "maxErrors": 3
+  },
+  "cards": [
+    { "id": 1, "type": "technology", "content": "HTML", "matchId": 2 },
+    { "id": 2, "type": "description", "content": "Язык разметки для структуры веб-страницы.", "matchId": 1 },
+    { "id": 3, "type": "technology", "content": "CSS", "matchId": 4 },
+    { "id": 4, "type": "description", "content": "Описывает внешний вид и стиль документа, написанного на HTML.", "matchId": 3 },
+    { "id": 5, "type": "technology", "content": "JavaScript", "matchId": 6 },
+    { "id": 6, "type": "description", "content": "Язык программирования для добавления интерактивности на веб-страницы.", "matchId": 5 },
+    { "id": 7, "type": "technology", "content": "React", "matchId": 8 },
+    { "id": 8, "type": "description", "content": "Библиотека JavaScript для создания пользовательских интерфейсов.", "matchId": 7 }
+  ]
+}

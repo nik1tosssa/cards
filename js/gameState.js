@@ -3,23 +3,20 @@
  */
 
 const GameState = {
-    // Стандартный набор данных
-    DEFAULT_CARD_DATA: [
-        { id: 1, type: 'concept', content: 'HTML', matchId: 2 },
-        { id: 2, type: 'definition', content: 'Язык разметки для структуры веб-страницы.', matchId: 1 },
-        { id: 3, type: 'concept', content: 'CSS', matchId: 4 },
-        { id: 4, type: 'definition', content: 'Описывает внешний вид и стиль документа, написанного на HTML.', matchId: 3 },
-        { id: 5, type: 'concept', content: 'JavaScript', matchId: 6 },
-        { id: 6, type: 'definition', content: 'Язык программирования для добавления интерактивности на веб-страницы.', matchId: 5 },
-        { id: 7, type: 'concept', content: 'Git', matchId: 8 },
-        { id: 8, type: 'definition', content: 'Система контроля версий, отслеживающая изменения в коде.', matchId: 7 },
-        { id: 9, type: 'concept', content: 'База данных', matchId: 10 },
-        { id: 10, type: 'definition', content: 'Структурированное хранилище для организации и управления данными.', matchId: 9 },
-        { id: 11, type: 'concept', content: 'API', matchId: 12 },
-        { id: 12, type: 'definition', content: 'Программный интерфейс, позволяющий двум приложениям взаимодействовать друг с другом.', matchId: 11 },
-    ],
-
     MAX_ERRORS: 5,
+    DEFAULT_TIME_LIMIT: null, // null = без ограничения по времени
+
+    // Метаданные текущей игры
+    gameMeta: {
+        title: '',
+        description: '',
+        columnNames: ['Левая', 'Правая'],
+        timeLimit: null,
+        maxErrors: 5
+    },
+
+    // Исходные данные игры (для перезапуска)
+    originalGameData: null,
 
     // Текущее состояние
     currentCardData: [],
@@ -46,14 +43,63 @@ const GameState = {
         this.totalPairs = 0;
         this.draggedCardId = null;
         this.errorCount = 0;
+        this.gameMeta = {
+            title: '',
+            description: '',
+            columnNames: ['Левая', 'Правая'],
+            timeLimit: null,
+            maxErrors: 5
+        };
+        // НЕ очищаем originalGameData — это нужно для рестарта игры
     },
 
     /**
-     * Устанавливает данные карточек
+     * Устанавливает метаданные и карточки из загруженных данных
+     */
+    setGameData(gameData) {
+        // gameData имеет структуру: { meta: {...}, cards: [...] }
+        if (gameData && gameData.meta && gameData.cards) {
+            // Сохраняем исходные данные для возможности рестарта
+            this.originalGameData = gameData;
+
+            // Устанавливаем метаданные
+            // 0 означает: нет ограничений/штрафов
+            const maxErrors = gameData.meta.maxErrors !== undefined ? gameData.meta.maxErrors : 5;
+            const timeLimit = gameData.meta.timeLimit !== undefined ? gameData.meta.timeLimit : null;
+
+        this.gameMeta = {
+            title: gameData.meta.title || 'Без названия',
+            description: gameData.meta.description || '',
+            columnNames: gameData.meta.columnNames || ['Левая', 'Правая'],
+            timeLimit: timeLimit === 0 ? null : timeLimit,  // 0 = нет ограничения по времени
+            maxErrors: maxErrors === 0 ? Infinity : maxErrors  // 0 = нет штрафа за ошибки
+        };
+
+            // Устанавливаем карточки
+            if (Array.isArray(gameData.cards) && gameData.cards.length > 0) {
+                this.currentCardData = gameData.cards;
+                this.totalPairs = this.currentCardData.length / 2;
+            } else {
+                this.currentCardData = [];
+                this.totalPairs = 0;
+            }
+
+            // Обновляем MAX_ERRORS в соответствии с метаданными
+            this.MAX_ERRORS = this.gameMeta.maxErrors;
+        } else {
+            this.currentCardData = [];
+            this.totalPairs = 0;
+        }
+    },
+
+    /**
+     * Устанавливает данные карточек (для обратной совместимости со старой моделью)
      */
     setCardData(data) {
         // Устанавливаем только если передан валидный массив, иначе очищаем данные.
         if (Array.isArray(data) && data.length > 0) {
+            // Сохраняем исходные данные для возможности рестарта
+            this.originalGameData = data;
             this.currentCardData = data;
             this.totalPairs = this.currentCardData.length / 2;
         } else {

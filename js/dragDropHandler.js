@@ -90,6 +90,14 @@ const DragDropHandler = {
      * Обработка неправильного сопоставления
      */
     handleMismatch(draggedElement, dropTarget) {
+        // Если нет штрафов за ошибки (maxErrors = Infinity), только показываем ошибку
+        if (GameState.MAX_ERRORS === Infinity) {
+            CardManager.showError(dropTarget);
+            CardManager.resetConceptVisuals(draggedElement);
+            return;
+        }
+
+        // Иначе увеличиваем счётчик ошибок
         GameState.incrementErrors();
         UIManager.updateErrorCount(GameState.errorCount);
 
@@ -102,4 +110,13 @@ const DragDropHandler = {
             setTimeout(() => UIManager.showGameStatusModal('game-over'), 700);
         }
     },
+
+    /**
+     * Обработка истечения времени
+     */
+    handleTimeExpired() {
+        // Блокируем перетаскивание
+        document.querySelectorAll('.card.concept').forEach(card => card.setAttribute('draggable', 'false'));
+        setTimeout(() => UIManager.showGameStatusModal('game-over'), 700);
+    }
 };
