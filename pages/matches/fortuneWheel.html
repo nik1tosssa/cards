@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Колесо Фортуны</title>
+    <!-- Загрузка Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Загрузка стилей -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="p-4 md:p-8 flex items-start justify-center">
+
+    <div id="app" class="w-full max-w-4xl bg-white rounded-xl shadow-2xl p-6 md:p-10 transition-all duration-300">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">Колесо Фортуны</h1>
+        <p id="game-description" class="text-gray-500 text-center mb-6">Вращай колесо и узнай, что тебе выпадет!</p>
+
+        <!-- JSON File Load Input (видно всегда) -->
+        <div class="mb-6">
+            <label for="fortune-file" class="block text-sm font-medium text-gray-700 mb-2">
+                Загрузить JSON-файл со списком слов для колеса:
+            </label>
+            <input type="file" id="fortune-file" accept=".json" class="w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-indigo-50 file:text-indigo-700
+                hover:file:bg-indigo-100 cursor-pointer
+            "/>
+        </div>
+
+        <!-- Индикатор загрузки -->
+        <div id="loading-message" style="display: none;">Загрузка данных...</div>
+
+        <!-- Весь игровой UI появляется только после загрузки JSON -->
+        <div id="game-ui" style="display: none;">
+            <!-- Статус и Результат -->
+            <div class="mb-6 p-3 bg-indigo-50 rounded-lg shadow-inner">
+                <div class="text-lg font-semibold text-indigo-700 text-center">
+                    <div id="result-display" class="text-gray-600">Загрузите JSON для начала</div>
+                </div>
+            </div>
+
+            <!-- Основной контент игры -->
+            <div class="flex flex-col items-center mb-8">
+                <canvas id="wheel-canvas" width="400" height="400" class="border-2 border-gray-300 rounded-lg mb-6"></canvas>
+                <button id="spin-button" disabled class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105">
+                    🎲 Вращать колесо
+                </button>
+            </div>
+        </div>
+
+        <!-- Модальное окно со статусом игры -->
+        <div id="status-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <div class="bg-white p-8 md:p-10 rounded-xl shadow-2xl text-center max-w-md transform transition-all duration-500 scale-100">
+                <h2 class="text-3xl font-bold text-indigo-600 mb-4">✨ Результат</h2>
+                <p class="text-xl text-gray-700 mb-6">Вам выпало:</p>
+                <div id="selected-word" class="text-4xl font-bold text-indigo-600 mb-8 p-4 bg-indigo-50 rounded-lg">
+                    <!-- Слово будет вставлено здесь -->
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="FortuneWheelGame.closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105">
+                        ✕ Закрыть
+                    </button>
+                    <button onclick="FortuneWheelGame.removeSelectedWord()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg shadow-md transition duration-150 ease-in-out transform hover:scale-105">
+                        🗑️ Убрать слово
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Загрузка JavaScript модулей -->
+    <script src="js/fortuneWheel.js"></script>
+</body>
+</html>
