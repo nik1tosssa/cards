@@ -1,0 +1,34 @@
+[
+  {
+    "text": "Кот",
+    "importance": 1
+  },
+  {
+    "text": "Собака",
+    "importance": 2
+  },
+  {
+    "text": "Птица",
+    "importance": 1
+  },
+  {
+    "text": "Рыба",
+    "importance": 1
+  },
+  {
+    "text": "Слон",
+    "importance": 4
+  },
+  {
+    "text": "Львица",
+    "importance": 3
+  },
+  {
+    "text": "Гепард",
+    "importance": 2
+  },
+  {
+    "text": "Жираф",
+    "importance": 1
+  }
+]
