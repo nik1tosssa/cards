@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Начальная страница — Соотнеси карточки</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="p-6 md:p-10 flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <main class="w-full max-w-5xl bg-white rounded-xl shadow-2xl p-6 md:p-10 transition-all duration-300">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-800">Быстрые карточки</h1>
+            <p class="text-gray-500 mt-2">Режим: Просмотр по одной (Клик для смены)</p>
+        </header>
+
+        <div class="mb-6">
+            <label for="json-file" class="block text-sm font-medium text-gray-700 mb-2">
+                Загрузить JSON-файл с карточками (формат: `title`, `description`):
+            </label>
+            <input type="file" id="json-file" accept=".json" class="w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-indigo-50 file:text-indigo-700
+                hover:file:bg-indigo-100 cursor-pointer
+            "/>
+        </div>
+
+        <div id="current-card-container" class="flex justify-center items-center h-64 w-full max-w-full hidden">
+            <div id="current-card" class="bg-white p-6 rounded-xl border border-gray-300 w-full text-center cursor-pointer transition-all duration-300 shadow-md hover:shadow-lg">
+                <p class="text-gray-500">Загрузите JSON-файл, чтобы начать.</p>
+            </div>
+        </div>
+        
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('json-file');
+            const cardContainer = document.getElementById('current-card');
+            const cardOuterContainer = document.getElementById('current-card-container');
+            
+            let cardsData = []; // Массив для хранения данных всех карточек
+            let currentCardIndex = 0; // Индекс текущей отображаемой карточки
+
+            // 1. Обработка загрузки файла
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    try {
+                        const jsonText = e.target.result;
+                        const data = JSON.parse(jsonText);
+                        
+                        if (Array.isArray(data) && data.length > 0) {
+                            cardsData = data.filter(card => card.title && card.description);
+                            currentCardIndex = 0;
+                            displayCard(currentCardIndex);
+                            
+                            // Показываем карточку
+                            cardOuterContainer.classList.remove('hidden'); 
+
+                            // 2. Добавление обработчика клика на контейнер
+                            cardContainer.removeEventListener('click', nextCard); 
+                            cardContainer.addEventListener('click', nextCard);
+                        } else {
+                            cardContainer.innerHTML = '<p class="text-red-500">Файл пуст или имеет неверный формат.</p>';
+                            cardOuterContainer.classList.remove('hidden');
+                        }
+
+                    } catch (error) {
+                        console.error("Ошибка при обработке JSON:", error);
+                        cardContainer.innerHTML = '<p class="text-red-500">Ошибка при парсинге JSON-файла.</p>';
+                        cardOuterContainer.classList.remove('hidden');
+                    }
+                };
+
+                reader.readAsText(file);
+            });
+
+            // 3. Функция отображения карточки по индексу
+            function displayCard(index) {
+                if (cardsData.length === 0) return;
+
+                const card = cardsData[index];
+                
+                // Обновляем содержимое карточки
+                cardContainer.innerHTML = `
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">${card.title}</h3>
+                    <p class="text-gray-600 text-lg text-justify">${card.description}</p>
+                    <p class="mt-4 text-xs text-gray-400">Карточка ${index + 1} из ${cardsData.length} | Кликните для перехода</p>
+                `;
+            }
+
+            // 4. Функция переключения на следующую карточку
+            function nextCard() {
+                // Увеличиваем индекс
+                currentCardIndex++;
+                
+                // Если дошли до конца, начинаем с первой карточки (циклический просмотр)
+                if (currentCardIndex >= cardsData.length) {
+                    currentCardIndex = 0;
+                }
+                
+                // Отображаем новую карточку
+                displayCard(currentCardIndex);
+            }
+        });
+    </script>
+
+</body>
+
+</html>
